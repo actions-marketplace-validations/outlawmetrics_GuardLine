@@ -9,8 +9,27 @@ inputs:
     default: "standard"
 
 runs:
-  using: "docker"
-  image: "Dockerfile"
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Install GuardLine
+      shell: bash
+      run: |
+        pip install pyyaml requests
+        git clone https://github.com/outlawmetrics/GuardLine.git /tmp/guardline
+
+    - name: Run GuardLine
+      shell: bash
+      run: |
+        cd /tmp/guardline
+        python -m src.main
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
 
 branding:
   icon: "shield"
