@@ -28,6 +28,20 @@ class SecretsScanner(BaseScanner):
     def scan(self, changed_files: list[str], config: dict) -> list[Finding]:
         findings = []
 
+        all_patterns = list(self.patterns)
+
+        if "custom-patterns" in config:
+            for custom in config["custom-patterns"]:
+                all_patterns.append({
+                    "id": "CUSTOM-" + custom.get("name", "unknown"),
+                    "name": custom["name"],
+                    "pattern": custom["pattern"],
+                    "severity": custom.get("severity", "warning"),
+                    "confidence": "medium",
+                    "description": "Custom rule: " + custom["name"],
+                    "remediation": custom.get("remediation", "Review this match and resolve according to your team's security policy")
+                })
+
         for file_path in changed_files:
             if not any(file_path.endswith(ext) for ext in self.supported_file_extensions):
                 continue
@@ -39,7 +53,7 @@ class SecretsScanner(BaseScanner):
                 continue
 
             for line_number, line in enumerate(lines, start=1):
-                for pattern in self.patterns:
+                for pattern in all_patterns:
                     if re.search(pattern["pattern"], line):
                         findings.append(Finding(
                             scanner=self.name,
@@ -55,4 +69,3 @@ class SecretsScanner(BaseScanner):
                         ))
 
         return findings
-
